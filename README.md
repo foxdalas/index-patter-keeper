@@ -1,1 +1,1 @@
-# index-patter-keeper
+# index-pattern-keeper
