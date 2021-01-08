@@ -14,10 +14,10 @@ type Kibana struct {
 	Url string
 }
 
-type createIndexPattern struct {
-	attributes struct {
-		title         string `json:"title"`
-		timeFieldName string `json:"timeFieldName"`
+type CreateIndexPattern struct {
+	Attributes struct {
+		Title         string `json:"title"`
+		TimeFieldName string `json:"timeFieldName"`
 	} `json:"attributes"`
 }
 
@@ -59,9 +59,9 @@ func New(url string) *Kibana {
 }
 
 func (k *Kibana) CreateIndexPattern(index string) error {
-	data := &createIndexPattern{}
-	data.attributes.timeFieldName = "@timestamp"
-	data.attributes.title = fmt.Sprintf("%s-*", index)
+	data := &CreateIndexPattern{}
+	data.Attributes.TimeFieldName = "@timestamp"
+	data.Attributes.Title = fmt.Sprintf("%s-*", index)
 	b, err := json.Marshal(data)
 	if err != nil {
 		return err
