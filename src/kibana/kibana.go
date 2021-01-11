@@ -58,6 +58,22 @@ func New(url string) *Kibana {
 	}
 }
 
+
+func (k *Kibana) FindDuplicates()  {
+	duplicates := make(map[string][]string)
+
+	for _, pattern := range  k.GetIndexesPatterns() {
+		duplicates[pattern.Name] = append(duplicates[pattern.Name], pattern.ID)
+	}
+
+	for _, ids := range duplicates {
+		if len(ids) > 1 {
+			fmt.Println(k)
+			k.DeleteIndexPattern(ids[1])
+		}
+	}
+}
+
 func (k *Kibana) CreateIndexPattern(index string) error {
 	data := &CreateIndexPattern{}
 	data.Attributes.TimeFieldName = "@timestamp"
@@ -68,7 +84,7 @@ func (k *Kibana) CreateIndexPattern(index string) error {
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/saved_objects/index-pattern/%s-*?overwrite=true", k.Url, index), bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/saved_objects/index-pattern", k.Url), bytes.NewBuffer(b))
 	if err != nil {
 		return err
 	}

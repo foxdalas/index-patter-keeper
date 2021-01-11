@@ -31,6 +31,8 @@ func main() {
 	indexWithoutPattern := getIndexesWithoutPattern(uniqIndexes, indexesPatterns)
 	patternWithoutIndexes := getPattarnWithoutIndexes(uniqIndexes, indexesPatterns)
 
+	kibana.FindDuplicates()
+
 	for _, pattern := range indexWithoutPattern {
 		err = kibana.CreateIndexPattern(pattern)
 		if err != nil {
