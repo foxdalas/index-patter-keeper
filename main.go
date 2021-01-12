@@ -114,7 +114,7 @@ func getPattarnWithoutIndexes(indexes []string, patterns kibana.IndexPatterns) [
 		}
 		if !isIndexExist {
 			fmt.Printf("Index pattern %s with id %s without indexes Deleting...\n", indexPattern.Name, indexPattern.ID)
-			patternWithoutIndexes = append(patternWithoutIndexes, indexPattern.Name)
+			patternWithoutIndexes = append(patternWithoutIndexes, indexPattern.ID)
 		}
 	}
 	return patternWithoutIndexes
