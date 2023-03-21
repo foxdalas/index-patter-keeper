@@ -1,0 +1,48 @@
+project_name: index-pattern-keeper
+release:
+  github:
+    owner: foxdalas
+    name: index-pattern-keeper
+  prerelease: auto
+
+
+builds:
+  - id: index-pattern-keeper
+    binary: index-pattern-keeper
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+dockers:
+  - id: index-pattern-keeper-amd64
+    goos: linux
+    goarch: amd64
+    ids:
+      - index-pattern-keeper
+    image_templates:
+      - "foxdalas/index-pattern-keeper:v{{ .Version }}-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+    use: buildx
+  - id: index-pattern-keeper-arm64
+    goos: linux
+    goarch: arm64
+    ids:
+      - index-pattern-keeper
+    image_templates:
+      - "foxdalas/index-pattern-keeper:v{{ .Version }}-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+    use: buildx
+docker_manifests:
+  - name_template: foxdalas/index-pattern-keeper:v{{ .Version }}
+    image_templates:
+      - foxdalas/index-pattern-keeper:v{{ .Version }}-amd64
+      - foxdalas/index-pattern-keeper:v{{ .Version }}-arm64
+  - name_template: foxdalas/index-pattern-keeper:latest
+    image_templates:
+      - foxdalas/index-pattern-keeper:v{{ .Version }}-amd64
+      - foxdalas/index-pattern-keeper:v{{ .Version }}-arm64

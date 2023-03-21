@@ -75,7 +75,7 @@ func (k *Kibana) DeleteDuplicates() error {
 
 	patterns, err := k.GetIndexesPatterns()
 	if err != nil {
-		k.Logger.Error("Kibana: can't get index patterns: %v", err)
+		k.Logger.Error("Kibana: can't get index patterns: %w", err)
 		return err
 	}
 
@@ -88,7 +88,7 @@ func (k *Kibana) DeleteDuplicates() error {
 			fmt.Println(k)
 			err := k.DeleteIndexPattern(&ids[1])
 			if err != nil {
-				k.Logger.Error("Kibana: can't delete index pattern: %v", err)
+				k.Logger.Error("Kibana: can't delete index pattern: %w", err)
 				return err
 			}
 			k.Logger.Infof("Kibana: deleted duplicate index pattern %s", ids[1].ID)
