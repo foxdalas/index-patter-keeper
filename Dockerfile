@@ -9,7 +9,7 @@ COPY . .
 RUN apk add alpine-sdk
 RUN go build -o index-pattern-keeper .
 
-FROM alpine:3.12
+FROM alpine:3.16
 RUN apk --no-cache add ca-certificates
 COPY --from=build /app/index-pattern-keeper /bin/
 ENTRYPOINT ["/bin/index-pattern-keeper"]
