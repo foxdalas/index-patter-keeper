@@ -3,8 +3,8 @@ module github.com/foxdalas/index-pattern-keeper
 go 1.15
 
 require (
-	github.com/minio/minio v0.0.0-20210108032731-f21d650ed4b5
-	github.com/olivere/elastic/v7 v7.0.22
-	github.com/opentracing/opentracing-go v1.2.0
-	github.com/slack-go/slack v0.7.4
+	github.com/caarlos0/env/v6 v6.10.1
+	github.com/minio/pkg v1.6.4
+	github.com/opensearch-project/opensearch-go/v2 v2.1.0
+	github.com/sirupsen/logrus v1.9.0
 )

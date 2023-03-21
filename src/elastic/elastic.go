@@ -2,104 +2,75 @@ package elastic
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/olivere/elastic/v7"
-	"github.com/opentracing/opentracing-go/log"
-	"net/http"
-	"regexp"
-	"syscall"
-	"time"
+	log "github.com/sirupsen/logrus"
+	"io"
+
+	"github.com/foxdalas/index-pattern-keeper/src/tools"
+	"github.com/opensearch-project/opensearch-go/v2"
+	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
+	"strings"
 )
 
-const (
-	layoutISO = "2006.01.02"
-)
-
-type elasticSearch struct {
+type OpenSearch struct {
 	Ctx    context.Context
-	Client *elastic.Client
+	Client *opensearch.Client
+	Logger *log.Entry
 }
 
-type EsRetrier struct {
-	backoff elastic.Backoff
-}
+func New(ctx context.Context, hostname string, log *log.Entry) (*OpenSearch, error) {
+	var addresses []string
 
-func New(elasticHost []string) (*elasticSearch, error) {
-	client, err := elastic.NewClient(
-		elastic.SetURL(elasticHost...),
-		elastic.SetSniff(false),
-		elastic.SetRetrier(NewEsRetrier()),
-		elastic.SetHealthcheck(true),
-		elastic.SetHealthcheckTimeout(time.Second*300),
-	)
+	addresses = append(addresses, hostname)
+
+	client, err := opensearch.NewClient(opensearch.Config{
+		Addresses:         addresses,
+		EnableDebugLogger: true,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), 300*time.Second)
-
-	return &elasticSearch{
+	return &OpenSearch{
 		Client: client,
 		Ctx:    ctx,
+		Logger: log,
 	}, nil
 }
 
-func ( e *elasticSearch) ListIndexes() []string {
+func (o *OpenSearch) CatIndexes(indexPattern string) ([]string, error) {
 	var data []string
-	indexName := fmt.Sprintf("*-2*")
-	validIndex := regexp.MustCompile(`^.+-2.+`)
-	re := regexp.MustCompile(`(.+)-\d{4}.+`)
-	res, err := e.Client.IndexGetSettings().Index(indexName).Do(e.Ctx)
+
+	getIndexes := opensearchapi.CatIndicesRequest{
+		Index: []string{indexPattern}, // get index names matching pattern
+		H:     []string{"index"},      // fetch only index names
+		// Format: "json",
+	}
+
+	res, err := getIndexes.Do(o.Ctx, o.Client)
 	if err != nil {
-		log.Error(err)
+		o.Logger.Errorf("Elasitc: problem with connection to elastic: %v", err)
+		return nil, err
 	}
-	var names []string
-	for name := range res {
-		names = append(names, name)
-	}
-
-	for _, name := range names {
-		if validIndex.MatchString(name) {
-			if len(re.FindStringSubmatch(name)[1]) > 0 {
-				data = append(data, re.FindStringSubmatch(name)[1])
-			}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			o.Logger.Errorf("Elasitc: problem with getting indexes: %v", err)
 		}
+	}(res.Body)
+	if res.IsError() {
+		return nil, fmt.Errorf("error getting indexes: %s", res.String())
 	}
-	return uniqueNonEmptyElementsOf(data)
-}
-
-func NewEsRetrier() *EsRetrier {
-	return &EsRetrier{
-		backoff: elastic.NewExponentialBackoff(10*time.Millisecond, 8*time.Second),
+	if err != nil {
+		o.Logger.Fatalf("Elastic: problem with getting indexes: %v", err)
+		return nil, err
 	}
-}
-
-func (r *EsRetrier) Retry(ctx context.Context, retry int, req *http.Request, resp *http.Response, err error) (time.Duration, bool, error) {
-	if err == syscall.ECONNREFUSED {
-		return 0, false, errors.New("Elasticsearch or network down")
-	}
-
-	if retry >= 5 {
-		return 0, false, nil
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		o.Logger.Errorf("Elastic: error reading response body: %v", err)
+		return nil, err
 	}
 
-	wait, stop := r.backoff.Next(retry)
-	return wait, stop, nil
-}
-
-func uniqueNonEmptyElementsOf(s []string) []string {
-	unique := make(map[string]bool, len(s))
-	us := make([]string, len(unique))
-	for _, elem := range s {
-		if len(elem) != 0 {
-			if !unique[elem] {
-				us = append(us, elem)
-				unique[elem] = true
-			}
-		}
-	}
-
-	return us
-
+	data = strings.Split(string(b), "\n")
+	return tools.UniqueNonEmptyElementsOf(data), nil
 }
