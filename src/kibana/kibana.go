@@ -157,6 +157,10 @@ func (k *Kibana) GetIndexesPatterns() (IndexPatterns, error) {
 	res := KibanaIndexPatterns{}
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/saved_objects/_find?per_page=1000&type=index-pattern&search_fields=title&search=*", k.Url), nil)
+	if err != nil {
+		k.Logger.Errorf("Kibana: error create the request %v", err)
+		return nil, err
+	}
 	resp, err := k.client.Do(req)
 	if err != nil {
 		k.Logger.Errorf("Kibana: can't get index patterns: %v", err)
@@ -169,6 +173,9 @@ func (k *Kibana) GetIndexesPatterns() (IndexPatterns, error) {
 		}
 	}(resp.Body)
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		k.Logger.Errorf("Kibana: error read the body %v", err)
+	}
 	err = json.Unmarshal(body, &res)
 	if err != nil {
 		k.Logger.Errorf("Kibana: JSON unmarshal error: %v", err)

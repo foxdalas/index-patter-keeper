@@ -19,12 +19,12 @@ jobs:
           gofmt-path: '.'
           gofmt-flags: '-l -d'
 
-#      - name: golangci-lint
-#        uses: golangci/golangci-lint-action@v2
-#        with:
-#          version: v1.51
-#          skip-go-installation: true
-#          skip-pkg-cache: true
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.51
+          skip-go-installation: true
+          skip-pkg-cache: true
 
       - name: Test
         run: go test ./...
