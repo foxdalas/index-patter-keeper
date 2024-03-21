@@ -7,7 +7,6 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -172,7 +171,7 @@ func (k *Kibana) GetIndexesPatterns() (IndexPatterns, error) {
 			k.Logger.Errorf("Kibana: request body close error: %v", err)
 		}
 	}(resp.Body)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		k.Logger.Errorf("Kibana: error read the body %v", err)
 	}
