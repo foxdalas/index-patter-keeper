@@ -139,6 +139,7 @@ func main() {
 	excludeIndexes := tools.UniqueNonEmptyElementsOf(append(internalIndexes, options.ExcludeIndexes...))
 	indexes := queryAllElastics(options.OpensearchServers, options.ConnectTimeout, options.IndexMatchPattern, excludeIndexes, logger)
 	excludePatterns := tools.UniqueNonEmptyElementsOf(options.ExcludePatterns)
+
 	logger.Debugf("Found %d indexes", len(indexes))
 	patterns, err := kib.GetIndexesPatterns()
 	if err != nil {
