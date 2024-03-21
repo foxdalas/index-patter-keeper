@@ -47,6 +47,7 @@ type options struct {
 	KibanaServer      string        `env:"KIBANA_SERVER" envDefault:"http://localhost:5601"`
 	IndexMatchPattern string        `env:"INDEX_PATTERN" envDefault:"*"`
 	ExcludeIndexes    []string      `env:"EXCLUDE_INDEXES" envSeparator:","`
+	ExcludePatterns   []string      `env:"EXCLUDE_PATTERNS" envSeparator:","`
 	ConnectTimeout    time.Duration `env:"CONNECT_TIMEOUT" envDefault:"30s"`
 }
 
@@ -137,6 +138,7 @@ func main() {
 	// fill indexes and patters
 	excludeIndexes := tools.UniqueNonEmptyElementsOf(append(internalIndexes, options.ExcludeIndexes...))
 	indexes := queryAllElastics(options.OpensearchServers, options.ConnectTimeout, options.IndexMatchPattern, excludeIndexes, logger)
+	excludePatterns := tools.UniqueNonEmptyElementsOf(append(options.ExcludePatterns))
 	logger.Debugf("Found %d indexes", len(indexes))
 	patterns, err := kib.GetIndexesPatterns()
 	if err != nil {
@@ -145,7 +147,7 @@ func main() {
 	logger.Debugf("Found %d patterns", len(patterns))
 
 	indexesWithoutPattern := findIndexesWithoutPattern(indexes, patterns, logger)
-	patternsWithoutIndex := findPatternWithoutIndexes(indexes, patterns, logger)
+	patternsWithoutIndex := findPatternWithoutIndexes(indexes, patterns, excludePatterns, logger)
 
 	// Delete patterns which have no index
 	if len(patternsWithoutIndex) > 0 {
@@ -247,11 +249,16 @@ func findIndexesWithoutPattern(indexes []string, patterns kibana.IndexPatterns, 
 	return indexWithoutPattern
 }
 
-func findPatternWithoutIndexes(indexes []string, patterns kibana.IndexPatterns, logger *log.Entry) []kibana.IndexPattern {
+func findPatternWithoutIndexes(indexes []string, patterns kibana.IndexPatterns, excludePatterns []string, logger *log.Entry) []kibana.IndexPattern {
 	var patternsWithoutIndexes []kibana.IndexPattern
 
 	re := regexp.MustCompile(`\*:(.+)-\*`)
 	for _, indexPattern := range patterns {
+
+		if tools.Contains(excludePatterns, indexPattern.Name) {
+			continue
+		}
+
 		var isIndexExist bool
 		for _, index := range indexes {
 			for _, ptr := range re.FindStringSubmatch(indexPattern.Name) {
@@ -264,6 +271,7 @@ func findPatternWithoutIndexes(indexes []string, patterns kibana.IndexPatterns, 
 			patternsWithoutIndexes = append(patternsWithoutIndexes, indexPattern)
 		}
 	}
+
 	logger.Infof("Found %d patterns without indexes", len(patternsWithoutIndexes))
 	return patternsWithoutIndexes
 }

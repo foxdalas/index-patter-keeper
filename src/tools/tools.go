@@ -13,3 +13,12 @@ func UniqueNonEmptyElementsOf(s []string) []string {
 	}
 	return us
 }
+
+func Contains(l []string, s string) bool {
+	for _, a := range l {
+		if a == s {
+			return true
+		}
+	}
+	return false
+}
